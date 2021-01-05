@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Racunalna grafika laboratorij 1</title>
+        <style>
+            canvas {
+                display: block;
+                justify-self: center;
+            }
+            div {
+                display: flex;
+                flex-flow: column;
+                align-items: center;
+                margin-top: 24px;
+            }
+            hr {
+                width: 50%;
+            }
+            .input {
+                width: 50%;
+                display: flex;
+                flex-flow: row;
+            }
+            input {
+                margin-left: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="gl">
+            <div class="input">
+                <label for="obj-file">.obj file:</label>
+                <input id="obj-file" type="file" />
+            </div>
+            <div class="input">
+                <label for="spline-file">spline file:</label>
+                <input id="spline-file" type="file" />
+            </div>
+            <div class="input">
+                <label for="coordinates">new camera:</label>
+                <input id="coordinates" type="text" />
+            </div>
+            <hr />
+        </div>
+        <script type="module" src="./js/logic.js" />
+    </body>
+</html>
