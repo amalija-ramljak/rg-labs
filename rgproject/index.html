@@ -128,6 +128,8 @@
           ];
         }
         counter++;
+        interrupted_bfs = true;
+        interrupted_dfs = true;
         clear();
       }
 
@@ -151,9 +153,13 @@
         changetree();
       }
 
+      let interrupted_bfs = false;
+      let interrupted_dfs = false;
       function findBFS() {
         let target = document.getElementById("target").value;
         if (target != "" && !isNaN(parseInt(target))) {
+          interrupted_bfs = false;
+          interrupted_dfs = true;
           console.log("BFS here");
           clear();
           iterations(target, "bfs");
@@ -162,6 +168,8 @@
       function findDFS() {
         let target = document.getElementById("target").value;
         if (target != "" && !isNaN(parseInt(target))) {
+          interrupted_dfs = false;
+          interrupted_bfs = true;
           console.log("DFS here");
           clear();
           iterations(target, "dfs");
@@ -172,7 +180,7 @@
         let current = treeData;
         let previous = treeData;
         let nexts = [treeData];
-        while (nexts.length > 0) {
+        while (nexts.length > 0 && ((type === "bfs" && !interrupted_bfs) || (type === "dfs" && !interrupted_dfs))) {
           current = type === "bfs" ? nexts.shift() : nexts.pop();
           document.getElementById("resulttext").innerText = `Looking at ${current.name}`;
           if (current.name in visited) {
@@ -191,14 +199,17 @@
           if (current.children) {
             nexts = nexts.concat(current.children);
           }
-          await new Promise((r) => setTimeout(r, 250));
+          await new Promise((r) => setTimeout(r, 500));
         }
-        if (current.name === target) {
-          document.getElementById("resulttext").innerText = `Found ${current.name}`;
+        let el = document.getElementById("resulttext");
+        if (interrupted_bfs || interrupted_dfs) {
+          el.innerText = `Interrupted ${type.toUpperCase()}`;
+        } else if (current.name === target) {
+          el.innerText = `Found ${current.name}`;
         } else {
           previous.checked = true;
           changetree();
-          document.getElementById("resulttext").innerText = `${target} is not in this tree`;
+          el.innerText = `${target} is not in this tree`;
         }
       }
     </script>
