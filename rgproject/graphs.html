@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<body>
+  <div class="abs">
+    <button onclick="addnode()">Add random node</button>
+    <br />
+    <br />
+    <input id="source" type="number" />
+    <span>Source</span>
+    <br />
+    <input id="target" type="number" />
+    <span>Target</span>
+    <br />
+    <button onclick="find()">Find shortest path</button>
+    <br />
+    <br />
+    <div id="result"></div>
+  </div>
+  <div id="graph"></div>
+  <script>
+    // set the dimensions and margins of the graph
+    const margin = { top: 50, right: 50, bottom: 50, left: 50 };
+    const width = 1400 - margin.left - margin.right;
+    const height = 900 - margin.top - margin.bottom;
+
+    const data = {
+      nodes: [],
+      links: [],
+    };
+
+    let svg = d3.select("#graph").append("svg");
+    let g = null;
+    let link = null;
+    let node = null;
+    updategraph();
+
+    function updategraph() {
+      svg.remove();
+      svg = d3
+        .select("#graph")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+      g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      link = svg.selectAll(".link").data(data.links).enter().append("g").attr("class", "link");
+      node = svg.selectAll(".node").data(data.nodes).enter().append("g").attr("class", "node");
+
+      link.append("line").style("stroke", (d) => (d.on_path ? "green" : "grey"));
+      link.append("rect").attr("fill", "white").style("stroke", "grey");
+      link
+        .append("text")
+        .attr("text-anchor", "middle")
+        .text((d) => d.weight);
+
+      node
+        .append("circle")
+        .attr("r", 17)
+        .style("stroke", (d) => (d.on_path ? "green" : "none"))
+        .style("fill", (d) => (d.end ? "salmon" : "lightblue"));
+      node
+        .append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.25em")
+        .text((d) => d.name)
+        .style("fill", (d) => (d.on_path ? "green" : "white"));
+
+      let simulation = d3
+        .forceSimulation(data.nodes)
+        .force(
+          "link",
+          d3
+            .forceLink()
+            .distance(50)
+            .id((d) => d.id)
+            .links(data.links)
+        )
+        .force("charge", d3.forceManyBody().strength(-1000))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .on("tick", tick);
+    }
+
+    // This function is run at each iteration of the force algorithm, updating the nodes position.
+    function tick() {
+      link
+        .selectAll("line")
+        .attr("x1", (d) => d.source.x)
+        .attr("y1", (d) => d.source.y)
+        .attr("x2", (d) => d.target.x)
+        .attr("y2", (d) => d.target.y);
+      link
+        .selectAll("text")
+        .attr("x", (d) => Math.abs(d.source.x - d.target.x) / 2 + min(d.source.x, d.target.x))
+        .attr("y", (d) => Math.abs(d.source.y - d.target.y) / 2 + min(d.source.y, d.target.y));
+      link
+        .selectAll("rect")
+        .attr("x", (d) => Math.abs(d.source.x - d.target.x) / 2 + min(d.source.x, d.target.x))
+        .attr("y", (d) => Math.abs(d.source.y - d.target.y) / 2 + min(d.source.y, d.target.y));
+
+      node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+    }
+
+    let counter = 0;
+    let link_counters = [];
+    const neighbours = [];
+    function addnode() {
+      let new_node = {
+        id: counter,
+        name: counter.toString(),
+      };
+      neighbours.push([]);
+      data.nodes.push(new_node);
+      counter++;
+      link_counters.push(0);
+      if (data.nodes.length > 1) {
+        let links = [];
+        let has_link = new Set();
+        for (let i = 0; i < min(1 + Math.floor(Math.random() * 3), data.nodes.length - 1); i++) {
+          let target = -1;
+          do {
+            target = Math.floor(Math.random() * (data.nodes.length - 1));
+          } while (has_link.has(target) || link_counters[target] > 4);
+          has_link.add(target);
+          link_counters[target]++;
+          let new_link = {
+            source: new_node.id,
+            target: target,
+            weight: 1 + Math.floor(Math.random() * 7),
+          };
+          neighbours[new_node.id].push({ name: target, weight: new_link.weight });
+          neighbours[target].push({ name: new_node.id, weight: new_link.weight });
+          links.push(new_link);
+        }
+        link_counters[new_node.id] += links.length;
+        data.links = data.links.concat(links);
+      }
+      clear();
+    }
+
+    function min(a, b) {
+      return a < b ? a : b;
+    }
+
+    function find() {
+      const source = document.getElementById("source").value;
+      let has_source = false;
+      const target = document.getElementById("target").value;
+      let has_target = false;
+      for (let node of data.nodes) {
+        has_source = has_source || node.name == source;
+        has_target = has_target || node.name == target;
+      }
+      let el = document.getElementById("result");
+      if (!has_source || !has_target) {
+        let warning_message = `<div class="warn">${!has_source ? "<div>Source not in graph!</div>" : ""}${
+          !has_target ? "<div>Target not in graph!</div>" : ""
+        }</div>`;
+        el.innerHTML = warning_message;
+        return;
+      }
+      if (source == target) {
+        el.innerText = "The distance from a node to itself is 0.";
+        return;
+      } else {
+        el.innerText = "";
+      }
+      spalg(source, target);
+    }
+
+    function spalg(source, target) {
+      let current = null;
+      let nexts = [];
+      for (let n of neighbours[source]) {
+        nexts.push({
+          p: [source, n.name],
+          c: n.name,
+          l: n.weight,
+        });
+      }
+      const node_distances = [];
+      const node_paths = [];
+      for (let i = 0; i < neighbours.length; i++) {
+        node_distances.push(Infinity);
+        node_paths.push([]);
+      }
+      while (nexts.length > 0) {
+        current = nexts.shift();
+        if (current.l < node_distances[current.c]) {
+          node_distances[current.c] = current.l;
+          node_paths[current.c] = current.p;
+        } else {
+          continue;
+        }
+        for (let n of neighbours[current.c]) {
+          nexts.push({
+            p: current.p.concat([n.name]),
+            c: n.name,
+            l: current.l + n.weight,
+          });
+        }
+      }
+      draw_path(node_distances[target], node_paths[target]);
+    }
+
+    function links_nodes(node1, node2, link) {
+      return (
+        (link.source.id == node1 && link.target.id == node2) || (link.target.id == node1 && link.source.id == node2)
+      );
+    }
+
+    async function draw_path(length, path) {
+      clear();
+      for (let i = 0; i < path.length; i++) {
+        if (i == 0 || i == path.length - 1) {
+          data.nodes[path[i]].end = true;
+        }
+        let n1 = path[i];
+        data.nodes[n1].on_path = true;
+        if (i < path.length - 1) {
+          let n2 = path[i + 1];
+          data.links.find((e) => links_nodes(n1, n2, e)).on_path = true;
+        }
+        updategraph();
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      data.nodes[path[path.length - 1]].end = true;
+      updategraph();
+      document.getElementById("result").innerHTML += `<div>Shortest path length: ${length}</div>`;
+    }
+
+    function clear() {
+      for (let l of data.links) {
+        l.on_path = false;
+      }
+      for (let n of data.nodes) {
+        n.on_path = false;
+        n.end = false;
+      }
+      document.getElementById("result").innerText = "";
+      updategraph();
+    }
+  </script>
+</body>
