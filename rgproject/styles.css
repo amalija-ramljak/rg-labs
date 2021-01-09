@@ -4,12 +4,36 @@
   stroke-width: 3px;
 }
 
-.node text {
-  font: 16px sans-serif;
+text {
+  font: 0.75em sans-serif;
+  font-weight: 700;
 }
 
-.link {
+.link line {
   fill: none;
   stroke: grey;
   stroke-width: 2px;
+}
+
+.link rect {
+  width: 22px;
+  height: 15px;
+  transform: translate(-11px, -12px);
+}
+
+.warn {
+  color: red;
+  font-size: 1rem;
+}
+
+.abs {
+  position: absolute;
+}
+
+span {
+  font-size: 0.75rem;
+}
+
+body {
+  font-family: sans-serif;
 }
