@@ -12,4 +12,5 @@ Create a particle swarm
 
 ### Project
 
-Visualise tree traversal with BFS and DFS, including a value search
+Trees - visualise tree traversal with BFS and DFS, including a value search
+Graphs - Find and draw shortest path in graph between two nodes
