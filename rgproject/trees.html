@@ -13,7 +13,7 @@
       <br />
       <button onclick="findBFS()">Find by BFS</button>
       <button onclick="findDFS()">Find by DFS</button>
-      <div id="resulttext"></div>
+      <div id="result"></div>
       <div id="tree"></div>
     </div>
     <script>
@@ -29,11 +29,11 @@
 
       let nodes = treemap(d3.hierarchy(treeData, (d) => d.children));
       let svg = d3
-          .select("#tree")
-          .append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom),
-        g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        .select("#tree")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+      let g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
       changetree();
       function changetree() {
@@ -56,7 +56,6 @@
           .enter()
           .append("path")
           .attr("class", "link")
-          .style("stroke", "black")
           .attr("d", (d) => {
             return (
               "M" +
@@ -182,7 +181,7 @@
         let nexts = [treeData];
         while (nexts.length > 0 && ((type === "bfs" && !interrupted_bfs) || (type === "dfs" && !interrupted_dfs))) {
           current = type === "bfs" ? nexts.shift() : nexts.pop();
-          document.getElementById("resulttext").innerText = `Looking at ${current.name}`;
+          document.getElementById("result").innerText = `Looking at ${current.name}`;
           if (current.name in visited) {
             continue;
           }
@@ -201,7 +200,7 @@
           }
           await new Promise((r) => setTimeout(r, 500));
         }
-        let el = document.getElementById("resulttext");
+        let el = document.getElementById("result");
         if (interrupted_bfs || interrupted_dfs) {
           el.innerText = `Interrupted ${type.toUpperCase()}`;
         } else if (current.name === target) {
