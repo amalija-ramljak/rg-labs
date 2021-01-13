@@ -5,7 +5,7 @@
     <script src="https://d3js.org/d3.v6.min.js"></script>
   </head>
   <body>
-    <div>
+    <div class="options">
       <button onclick="addnode()">Add random node</button>
       <br />
       <br />
@@ -13,9 +13,11 @@
       <br />
       <button onclick="findBFS()">Find by BFS</button>
       <button onclick="findDFS()">Find by DFS</button>
+      <br />
+      <br />
       <div id="result"></div>
-      <div id="tree"></div>
     </div>
+    <div id="tree"></div>
     <script>
       let counter = 1;
       const treeData = {
@@ -50,12 +52,13 @@
           .attr("height", height + margin.top + margin.bottom);
         g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
         // adds the links between the nodes
-        const link = g
+        let link = g
           .selectAll(".link")
           .data(nodes.descendants().slice(1))
           .enter()
-          .append("path")
+          .append("g")
           .attr("class", "link")
+          .append("path")
           .attr("d", (d) => {
             return (
               "M" +
@@ -78,7 +81,7 @@
           });
 
         // adds each node as a group
-        const node = g
+        let node = g
           .selectAll(".node")
           .data(nodes.descendants())
           .enter()
@@ -127,8 +130,14 @@
           ];
         }
         counter++;
-        interrupted_bfs = true;
-        interrupted_dfs = true;
+        let content = "";
+        if (is_running) {
+          interrupted_bfs = true;
+          interrupted_dfs = true;
+          content = "<div>Interrupted algorithm</div>";
+        }
+        content += `<div>Added node ${counter - 1}</div>`;
+        document.getElementById("result").innerHTML = content;
         clear();
       }
 
@@ -155,30 +164,33 @@
       let interrupted_bfs = false;
       let interrupted_dfs = false;
       function findBFS() {
+        interrupted_bfs = false;
         let target = document.getElementById("target").value;
         if (target != "" && !isNaN(parseInt(target))) {
           interrupted_bfs = false;
           interrupted_dfs = true;
-          console.log("BFS here");
           clear();
           iterations(target, "bfs");
         }
       }
       function findDFS() {
+        interrupted_dfs = false;
         let target = document.getElementById("target").value;
         if (target != "" && !isNaN(parseInt(target))) {
           interrupted_dfs = false;
           interrupted_bfs = true;
-          console.log("DFS here");
           clear();
           iterations(target, "dfs");
         }
       }
+
+      is_running = false;
       async function iterations(target, type) {
         const visited = new Set();
         let current = treeData;
         let previous = treeData;
         let nexts = [treeData];
+        is_running = true;
         while (nexts.length > 0 && ((type === "bfs" && !interrupted_bfs) || (type === "dfs" && !interrupted_dfs))) {
           current = type === "bfs" ? nexts.shift() : nexts.pop();
           document.getElementById("result").innerText = `Looking at ${current.name}`;
@@ -200,12 +212,13 @@
           }
           await new Promise((r) => setTimeout(r, 500));
         }
+        if ((type === "bfs" && interrupted_bfs) || (type === "dfs" && interrupted_dfs)) {
+          is_running = false;
+        }
         let el = document.getElementById("result");
-        if (interrupted_bfs || interrupted_dfs) {
-          el.innerText = `Interrupted ${type.toUpperCase()}`;
-        } else if (current.name === target) {
+        if (current.name === target) {
           el.innerText = `Found ${current.name}`;
-        } else {
+        } else if (is_running) {
           previous.checked = true;
           changetree();
           el.innerText = `${target} is not in this tree`;
